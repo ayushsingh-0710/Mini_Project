@@ -5,7 +5,8 @@ import {
   MdDashboard, MdPolicy, MdAssignment, MdPeople, MdSupervisorAccount,
   MdBarChart, MdSettings, MdShield, MdCreditCard, MdAccountCircle,
   MdHeadsetMic, MdLogout, MdKeyboardArrowRight, MdLocalHospital,
-  MdAutorenew, MdVideocam, MdChat, MdCall, MdChatBubbleOutline, MdOutlineShield, MdClose
+  MdAutorenew, MdVideocam, MdChat, MdCall, MdChatBubbleOutline, MdOutlineShield, MdClose,
+  MdStore, MdFactCheck, MdShoppingCart, MdInfoOutline
 } from 'react-icons/md';
 
 const adminNav = [
@@ -22,29 +23,36 @@ const adminNav = [
   ]},
 ];
 
-const userNav = [
-  { section: 'MAIN SERVICES', items: [
-    { icon: <MdPolicy />, label: 'Insurance Policies', path: '/user/dashboard' },
-    { icon: <MdLocalHospital />, label: 'Emergency Services', path: '/user/emergency' },
+const normalUserNav = [
+  { section: 'MY ACCOUNT', items: [
+    { icon: <MdPolicy />, label: 'My Policies', path: '/user/policies' },
+    { icon: <MdShoppingCart />, label: 'Buy Policy', path: '/user/buy-policy' },
   ]},
-  { section: 'QUICK & EASY', items: [
+  { section: 'CLAIMS & SUPPORT', items: [
     { icon: <MdAssignment />, label: 'File a Claim', path: '/user/claims', badge: null },
-    { icon: <MdAutorenew />, label: 'Quick Renewal', path: '/user/renewal' },
+    { icon: <MdInfoOutline />, label: 'Claim Status', path: '/user/claim-status' },
+    { icon: <MdAccountCircle />, label: 'Profile', path: '/user/profile' },
   ]},
-  { section: 'HELP & SUPPORT', items: [
-    { icon: <MdVideocam />, label: 'Video Call Insurance', path: '/user/videocall' },
-    { icon: <MdChat />, label: 'WhatsApp', path: '/user/whatsapp' },
-    { icon: <MdCall />, label: 'Call Us', path: '/user/call' },
-    { icon: <MdChatBubbleOutline />, label: 'Start a Chat', path: '/user/chat' },
+];
+
+const userAdminNav = [
+  { section: 'BRANCH MANAGEMENT', items: [
+    { icon: <MdPeople />, label: 'Manage Customers', path: '/user/manage-customers' },
+    { icon: <MdPolicy />, label: 'Assigned Policies', path: '/user/assigned-policies' },
+    { icon: <MdFactCheck />, label: 'Claim Verification', path: '/user/claim-verification' },
+    { icon: <MdBarChart />, label: 'Branch Analytics', path: '/user/branch-analytics' },
   ]},
 ];
 
 const Sidebar = ({ isOpen, onClose }) => {
-  const { portal, switchPortal } = usePortal();
+  const { portal, switchPortal, userRole, switchUserRole } = usePortal();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const navItems = portal === 'admin' ? adminNav : userNav;
+  let navItems = adminNav;
+  if (portal === 'user') {
+    navItems = userRole === 'admin' ? userAdminNav : normalUserNav;
+  }
 
   const handleSwitch = (p) => {
     switchPortal(p);
@@ -90,6 +98,28 @@ const Sidebar = ({ isOpen, onClose }) => {
         </div>
       </div>
 
+      {/* Sub-role Toggle for User Mode */}
+      {portal === 'user' && (
+        <div className="sidebar-portal-toggle" style={{ marginTop: '0', paddingTop: '0' }}>
+          <div className="portal-toggle-btns" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '4px' }}>
+            <button
+              className={`portal-btn ${userRole === 'normal' ? 'active' : ''}`}
+              onClick={() => switchUserRole('normal')}
+              style={{ fontSize: '0.8rem', padding: '6px' }}
+            >
+              Normal User
+            </button>
+            <button
+              className={`portal-btn ${userRole === 'admin' ? 'active' : ''}`}
+              onClick={() => switchUserRole('admin')}
+              style={{ fontSize: '0.8rem', padding: '6px' }}
+            >
+              User Admin
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Navigation */}
       <nav className="sidebar-nav">
         {navItems.map((section) => (
@@ -117,8 +147,12 @@ const Sidebar = ({ isOpen, onClose }) => {
             {portal === 'admin' ? 'A' : 'U'}
           </div>
           <div className="user-info">
-            <div className="user-name">{portal === 'admin' ? 'Admin User' : 'User'}</div>
-            <div className="user-role">{portal === 'admin' ? 'Super Administrator' : 'Policy Holder'}</div>
+            <div className="user-name">
+              {portal === 'admin' ? 'Admin User' : (userRole === 'admin' ? 'Agent Manager' : 'John Doe')}
+            </div>
+            <div className="user-role">
+              {portal === 'admin' ? 'Super Administrator' : (userRole === 'admin' ? 'User Admin' : 'Customer')}
+            </div>
           </div>
           <MdKeyboardArrowRight style={{ color: 'var(--text-muted)', fontSize: 18 }} />
         </div>
