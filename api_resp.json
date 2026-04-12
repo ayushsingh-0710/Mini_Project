@@ -1,0 +1,52 @@
+{
+  "data": [
+    {
+      "_id": "69d474399f6068c2edc0ec4f",
+      "id": "POL-1001",
+      "holder": "Rajesh Sharma",
+      "type": "Health",
+      "plan": "Family Care Pro",
+      "premium": "₹14,500",
+      "coverage": "₹10,00,000",
+      "start": "2025-01-15",
+      "end": "2026-01-14",
+      "agent": "Ravi Kumar",
+      "status": "active",
+      "__v": 0,
+      "createdAt": "2026-04-07T03:04:25.848Z",
+      "updatedAt": "2026-04-07T03:04:25.848Z"
+    },
+    {
+      "_id": "69d474399f6068c2edc0ec50",
+      "id": "POL-1002",
+      "holder": "Amit Verma",
+      "type": "Auto",
+      "plan": "Comprehensive Car",
+      "premium": "₹8,200",
+      "coverage": "₹5,00,000",
+      "start": "2025-03-10",
+      "end": "2026-03-09",
+      "agent": "Sneha Kapoor",
+      "status": "pending",
+      "__v": 0,
+      "createdAt": "2026-04-07T03:04:25.849Z",
+      "updatedAt": "2026-04-07T03:04:25.849Z"
+    },
+    {
+      "_id": "69d474399f6068c2edc0ec51",
+      "id": "POL-1003",
+      "holder": "Priya Patel",
+      "type": "Life",
+      "plan": "Term Life Shield",
+      "premium": "₹22,000",
+      "coverage": "₹1,00,00,000",
+      "start": "2024-05-20",
+      "end": "2025-05-19",
+      "agent": "Deepak Nair",
+      "status": "expired",
+      "__v": 0,
+      "createdAt": "2026-04-07T03:04:25.849Z",
+      "updatedAt": "2026-04-07T03:04:25.849Z"
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "data": [
+    {
+      "_id": "69d4851360b14674a2aecf46",
+      "id": "USR-3001",
+      "name": "Priya Sharma",
+      "email": "priya.s@example.com",
+      "phone": "+91 98765 43210",
+      "city": "Mumbai",
+      "status": "active",
+      "policies": 2,
+      "joined": "Jan 15, 2026",
+      "avatar": "PS",
+      "__v": 0,
+      "createdAt": "2026-04-07T04:16:19.587Z",
+      "updatedAt": "2026-04-07T04:16:19.587Z"
+    },
+    {
+      "_id": "69d4851360b14674a2aecf47",
+      "id": "USR-3002",
+      "name": "Amit Desai",
+      "email": "amit.d@example.com",
+      "phone": "+91 91234 56789",
+      "city": "Delhi",
+      "status": "active",
+      "policies": 1,
+      "joined": "Feb 10, 2026",
+      "avatar": "AD",
+      "__v": 0,
+      "createdAt": "2026-04-07T04:16:19.587Z",
+      "updatedAt": "2026-04-07T04:16:19.587Z"
+    },
+    {
+      "_id": "69d4851360b14674a2aecf48",
+      "id": "USR-3003",
+      "name": "Neha Gupta",
+      "email": "neha.g@example.com",
+      "phone": "+91 99887 76655",
+      "city": "Bangalore",
+      "status": "blocked",
+      "policies": 0,
+      "joined": "Mar 05, 2026",
+      "avatar": "NG",
+      "__v": 0,
+      "createdAt": "2026-04-07T04:16:19.587Z",
+      "updatedAt": "2026-04-07T04:16:19.587Z"
+    }
+  ]
+}
