@@ -14,8 +14,8 @@ const AgentModal = ({ agent, onClose, onSave }) => {
     setLoading(true);
     try {
       const url = agent 
-        ? `http://localhost:5000/api/admin/agents/${agent.id}`
-        : 'http://localhost:5000/api/admin/agents';
+        ? `https://mini-project-g2lv.onrender.com/api/admin/agents/${agent.id}`
+        : 'https://mini-project-g2lv.onrender.com/api/admin/agents';
       const method = agent ? 'PUT' : 'POST';
       
       const response = await fetch(url, {
@@ -95,7 +95,7 @@ const Agents = () => {
   useEffect(() => {
     const fetchAgents = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/admin/agents');
+        const response = await fetch('https://mini-project-g2lv.onrender.com/api/admin/agents');
         const data = await response.json();
         if (response.ok) {
           setAgents(data.data);

@@ -48,7 +48,7 @@ const AdminDashboard = () => {
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/admin/dashboard');
+        const response = await fetch('https://mini-project-g2lv.onrender.com/api/admin/dashboard');
         const data = await response.json();
         if(response.ok) {
           setDashboardData(data.data);

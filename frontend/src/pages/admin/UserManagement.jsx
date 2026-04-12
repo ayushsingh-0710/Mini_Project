@@ -63,7 +63,7 @@ const UserManagement = () => {
   const { refreshKey } = usePortal();
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/admin/users')
+    fetch('https://mini-project-g2lv.onrender.com/api/admin/users')
       .then(res => res.json())
       .then(data => {
         if(data.data) setUsers(data.data);
@@ -78,7 +78,7 @@ const UserManagement = () => {
     const newStatus = user.status === 'blocked' ? 'active' : 'blocked';
     
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/users/${id}/status`, {
+      const res = await fetch(`https://mini-project-g2lv.onrender.com/api/admin/users/${id}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })
@@ -93,7 +93,7 @@ const UserManagement = () => {
 
   const handleSaveUser = async (formData) => {
     try {
-      const res = await fetch('http://localhost:5000/api/admin/users', {
+      const res = await fetch('https://mini-project-g2lv.onrender.com/api/admin/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)

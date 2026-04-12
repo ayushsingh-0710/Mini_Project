@@ -56,7 +56,7 @@ const ClaimsManagement = () => {
   const { refreshKey } = usePortal();
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/admin/claims')
+    fetch('https://mini-project-g2lv.onrender.com/api/admin/claims')
       .then(res => res.json())
       .then(data => {
         if(data.data) setClaims(data.data);
@@ -66,7 +66,7 @@ const ClaimsManagement = () => {
 
   const approve = async (id) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/claims/${id}/status`, {
+      const res = await fetch(`https://mini-project-g2lv.onrender.com/api/admin/claims/${id}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'approved' })
@@ -77,7 +77,7 @@ const ClaimsManagement = () => {
 
   const reject = async (id) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/claims/${id}/status`, {
+      const res = await fetch(`https://mini-project-g2lv.onrender.com/api/admin/claims/${id}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'rejected' })

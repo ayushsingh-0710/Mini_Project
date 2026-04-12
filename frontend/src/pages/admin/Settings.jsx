@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MdSave, MdNotifications, MdSecurity, MdPalette, MdBusiness, MdEmail } from 'react-icons/md';
 
-const API = 'http://localhost:5000/api/admin';
+const API = 'https://mini-project-g2lv.onrender.com/api/admin';
 const sections = ['General', 'Notifications', 'Security', 'Appearance', 'Email Templates', 'Billing'];
 
 const Settings = () => {

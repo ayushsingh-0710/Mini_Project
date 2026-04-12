@@ -38,7 +38,7 @@ const Reports = () => {
     const fetchReports = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`http://localhost:5000/api/admin/reports?period=${period}`);
+        const response = await fetch(`https://mini-project-g2lv.onrender.com/api/admin/reports?period=${period}`);
         const data = await response.json();
         if (response.ok) {
           setReportData(data.data);

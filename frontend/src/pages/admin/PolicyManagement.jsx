@@ -125,7 +125,7 @@ const PolicyManagement = () => {
   useEffect(() => {
     const fetchPolicies = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/admin/policies');
+        const response = await fetch('https://mini-project-g2lv.onrender.com/api/admin/policies');
         const data = await response.json();
         if (response.ok) {
           setPolicies(data.data);
@@ -146,7 +146,7 @@ const PolicyManagement = () => {
 
   const handleDelete = async (id) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/admin/policies/${id}`, { method: 'DELETE' });
+      const response = await fetch(`https://mini-project-g2lv.onrender.com/api/admin/policies/${id}`, { method: 'DELETE' });
       if (response.ok) {
         setPolicies(prev => prev.filter(p => p.id !== id));
       }
