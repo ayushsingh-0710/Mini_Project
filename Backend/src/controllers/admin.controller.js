@@ -30,19 +30,19 @@ const getDashboardData = async (req, res) => {
     const users = await User.find();
     
     // 1. Stats Calculation
-    const totalPolicies = policies.length || 1248;
+    const totalPolicies = policies.length;
     const totalRevenueNum = policies.reduce((acc, p) => acc + parseCurrency(p.premium), 0);
     const activeClaimsCount = claims.filter(c => c.status === 'pending').length;
-    const totalClientsCount = users.length || 856;
-    const claimRatioNum = totalPolicies > 0 ? (claims.filter(c => c.status === 'approved').length / totalPolicies) * 100 : 28.4;
+    const totalClientsCount = users.length;
+    const claimRatioNum = totalPolicies > 0 ? (claims.filter(c => c.status === 'approved').length / totalPolicies) * 100 : 0;
 
     const stats = {
       totalPolicies: { value: totalPolicies.toLocaleString(), change: '+12.5%', up: true },
-      totalRevenue: { value: totalRevenueNum > 0 ? formatCurrency(totalRevenueNum) : '₹24.5L', change: '+8.2%', up: true },
-      activeClaims: { value: activeClaimsCount > 0 ? activeClaimsCount.toString() : '42', change: '-4.1%', up: false },
+      totalRevenue: { value: totalRevenueNum > 0 ? formatCurrency(totalRevenueNum) : '₹0', change: '+8.2%', up: true },
+      activeClaims: { value: activeClaimsCount.toString(), change: '-4.1%', up: false },
       totalClients: { value: totalClientsCount.toLocaleString(), change: '+5.4%', up: true },
-      renewalsDue: { value: '115', change: '+12%', up: false },
-      claimRatio: { value: totalPolicies > 0 ? `${claimRatioNum.toFixed(1)}%` : '28.4%', change: '-2.1%', up: true }
+      renewalsDue: { value: '0', change: '+12%', up: false },
+      claimRatio: { value: `${claimRatioNum.toFixed(1)}%`, change: '-2.1%', up: true }
     };
 
     // 2. Revenue vs Claims Chart Data (Last 8 months)
@@ -56,9 +56,9 @@ const getDashboardData = async (req, res) => {
       const clm = claims.filter(c => c.filed && c.filed.includes(`-${monthStr}-`)).reduce((acc, c) => acc + parseCurrency(c.amount), 0);
       return { 
         month: m, 
-        revenue: rev || (monthsToShow.indexOf(m) * 20000 + 100000), 
-        claims: clm || (monthsToShow.indexOf(m) * 15000 + 40000),
-        policies: policies.filter(p => p.start && p.start.includes(`-${monthStr}-`)).length || (monthsToShow.indexOf(m) * 5 + 45)
+        revenue: rev || 0, 
+        claims: clm || 0,
+        policies: policies.filter(p => p.start && p.start.includes(`-${monthStr}-`)).length
       };
     });
 
@@ -71,7 +71,7 @@ const getDashboardData = async (req, res) => {
     
     const policyTypeData = policyTypes.map((name, i) => ({
       name,
-      value: typeCounts[i] > 0 ? Math.round((typeCounts[i] / totalTypeCount) * 100) : [45, 30, 15, 10][i],
+      value: typeCounts[i] > 0 ? Math.round((typeCounts[i] / totalTypeCount) * 100) : 0,
       color: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'][i]
     }));
 
@@ -82,12 +82,7 @@ const getDashboardData = async (req, res) => {
       amount: c.amount,
       status: c.status,
       date: new Date(c.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-    })) : [
-      { id: 'CLM-419', holder: 'Sarah Johnson', amount: '₹1,25,000', status: 'approved', date: 'Oct 24, 2026' },
-      { id: 'CLM-420', holder: 'Michael Chen', amount: '₹45,000', status: 'pending', date: 'Oct 23, 2026' },
-      { id: 'CLM-421', holder: 'Emma Williams', amount: '₹8,500', status: 'approved', date: 'Oct 23, 2026' },
-      { id: 'CLM-422', holder: 'David Brown', amount: '₹3,50,000', status: 'review', date: 'Oct 22, 2026' }
-    ];
+    })) : [];
 
     // 5. Recent Activity
     const recentActivity = [
@@ -95,14 +90,7 @@ const getDashboardData = async (req, res) => {
       ...claims.slice(0, 2).map(c => ({ title: `Claim ${c.id} status updated`, time: 'Recently', color: '#3b82f6' }))
     ];
     
-    if (recentActivity.length === 0) {
-      recentActivity.push(
-        { title: 'New policy issued: AUTO-892', time: '5 mins ago', color: '#10b981' },
-        { title: 'Claim CLM-419 approved', time: '12 mins ago', color: '#3b82f6' },
-        { title: 'New user registration', time: '1 hour ago', color: '#8b5cf6' },
-        { title: 'Payment failed for HLT-223', time: '2 hours ago', color: '#ef4444' }
-      );
-    }
+    // Removed hardcoded initial activity
 
     res.status(200).json({ 
       data: {
@@ -122,15 +110,6 @@ const getDashboardData = async (req, res) => {
 const getPolicies = async (req, res) => {
   try {
     let policies = await Policy.find();
-    if (policies.length === 0) {
-      const initial = [
-        { id: 'POL-1001', holder: 'Rajesh Sharma', type: 'Health', plan: 'Family Care Pro', premium: '₹14,500', coverage: '₹10,00,000', start: '2025-01-15', end: '2026-01-14', agent: 'Ravi Kumar', status: 'active' },
-        { id: 'POL-1002', holder: 'Amit Verma', type: 'Auto', plan: 'Comprehensive Car', premium: '₹8,200', coverage: '₹5,00,000', start: '2025-03-10', end: '2026-03-09', agent: 'Sneha Kapoor', status: 'pending' },
-        { id: 'POL-1003', holder: 'Priya Patel', type: 'Life', plan: 'Term Life Shield', premium: '₹22,000', coverage: '₹1,00,00,000', start: '2024-05-20', end: '2025-05-19', agent: 'Deepak Nair', status: 'expired' }
-      ];
-      await Policy.insertMany(initial);
-      policies = await Policy.find();
-    }
     res.status(200).json({ data: policies });
   } catch (error) {
     res.status(500).json({ message: 'Server Error fetching policies' });
@@ -140,6 +119,9 @@ const getPolicies = async (req, res) => {
 const createPolicy = async (req, res) => {
   try {
     const newPolicy = new Policy(req.body);
+    if (!newPolicy.id) {
+      newPolicy.id = `POL-${Math.floor(1000 + Math.random() * 9000)}`;
+    }
     await newPolicy.save();
     res.status(201).json({ message: 'Policy created', data: newPolicy });
   } catch (error) {
@@ -180,6 +162,22 @@ const getClaims = async (req, res) => {
     res.status(200).json({ data: claims });
   } catch (error) {
     res.status(500).json({ message: 'Server Error fetching claims' });
+  }
+};
+
+const createClaim = async (req, res) => {
+  try {
+    const newClaim = new Claim(req.body);
+    if (!newClaim.id) {
+      newClaim.id = `CLM-${Math.floor(2000 + Math.random() * 9000)}`;
+    }
+    if (!newClaim.status) {
+      newClaim.status = 'pending';
+    }
+    await newClaim.save();
+    res.status(201).json({ message: 'Claim created', data: newClaim });
+  } catch (error) {
+    res.status(500).json({ message: 'Error creating claim' });
   }
 };
 
@@ -242,6 +240,15 @@ const updateUserStatus = async (req, res) => {
   }
 };
 
+const updateUser = async (req, res) => {
+  try {
+    const user = await User.findOneAndUpdate({ id: req.params.id }, req.body, { new: true });
+    res.status(200).json({ message: 'User details updated', data: user });
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating user details' });
+  }
+};
+
 const getAgents = async (req, res) => {
   try {
     let agents = await Agent.find();
@@ -285,6 +292,15 @@ const updateAgent = async (req, res) => {
     res.status(200).json({ message: 'Agent updated', data: agent });
   } catch (error) {
     res.status(500).json({ message: 'Error updating agent' });
+  }
+};
+
+const deleteAgent = async (req, res) => {
+  try {
+    await Agent.findOneAndDelete({ id: req.params.id });
+    res.status(200).json({ message: 'Agent deleted' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting agent' });
   }
 };
 
@@ -423,7 +439,10 @@ const updateSettings = async (req, res) => {
 
 const updateAdminPassword = async (req, res) => {
   try {
-    const { newPassword, confirmPassword } = req.body;
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+    if (!currentPassword || currentPassword.length < 3) {
+      return res.status(400).json({ message: 'Invalid current password' });
+    }
     if (!newPassword || newPassword.length < 6) {
       return res.status(400).json({ message: 'Password must be at least 6 characters' });
     }
@@ -444,13 +463,16 @@ module.exports = {
   updatePolicy,
   deletePolicy,
   getClaims,
+  createClaim,
   updateClaimStatus,
   getUsers,
   createUser,
+  updateUser,
   updateUserStatus,
   getAgents,
   createAgent,
   updateAgent,
+  deleteAgent,
   getReportData,
   getSettings,
   updateSettings,

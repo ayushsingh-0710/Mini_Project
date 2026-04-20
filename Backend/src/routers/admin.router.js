@@ -18,17 +18,20 @@ router.delete('/policies/:id', adminController.deletePolicy);
 
 // Claim routes
 router.get('/claims', adminController.getClaims);
+router.post('/claims', adminController.createClaim);
 router.put('/claims/:id/status', adminController.updateClaimStatus);
 
 // User routes
 router.get('/users', adminController.getUsers);
 router.post('/users', adminController.createUser);
+router.put('/users/:id', adminController.updateUser);
 router.put('/users/:id/status', adminController.updateUserStatus);
 
 // Agent routes
 router.get('/agents', adminController.getAgents);
 router.post('/agents', adminController.createAgent);
 router.put('/agents/:id', adminController.updateAgent);
+router.delete('/agents/:id', adminController.deleteAgent);
 
 
 module.exports = router;
