@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { getUserData, saveUserData } from "../../utils/storage";
+import { getUserData } from "../../utils/storage";
+import { MdDescription, MdCheckCircle, MdPendingActions, MdPayments } from "react-icons/md";
 
 const ClaimStatus = () => {
   const [claims, setClaims] = useState([]);
@@ -9,126 +10,180 @@ const ClaimStatus = () => {
     setClaims(data.claims || []);
   }, []);
 
-  const handleStatusChange = (id, newStatus) => {
-    const data = getUserData();
-
-    data.claims = data.claims.map((claim) =>
-      claim.id === id ? { ...claim, status: newStatus.toLowerCase() } : claim
-    );
-
-    data.notifications.unshift({
-      id: Date.now(),
-      message: `Claim ${id} marked as ${newStatus}`,
-      time: new Date().toLocaleString(),
-    });
-
-    saveUserData(data);
-    setClaims(data.claims);
-  };
-
-  const handleDelete = (id) => {
-    const data = getUserData();
-
-    data.claims = data.claims.filter((claim) => claim.id !== id);
-
-    data.notifications.unshift({
-      id: Date.now(),
-      message: `Claim ${id} deleted`,
-      time: new Date().toLocaleString(),
-    });
-
-    saveUserData(data);
-    setClaims(data.claims);
-  };
-
   return (
-    <div style={{ padding: "20px" }}>
-      <h1>Claim Status</h1>
+    <div className="page-container">
+      <div style={{ marginBottom: 26 }}>
+        <h1 style={{ fontSize: 30, fontWeight: 800, marginBottom: 8 }}>Claim Status</h1>
+        <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>
+          Track your submitted claims, view their progress, and check the latest updates.
+        </p>
+      </div>
 
       {claims.length === 0 ? (
-        <p>No claims found ❌</p>
+        <div
+          className="chart-card"
+          style={{
+            borderRadius: 24,
+            padding: 34,
+            textAlign: "center",
+            background: "rgba(255,255,255,0.55)",
+            backdropFilter: "blur(16px)"
+          }}
+        >
+          <div style={{ fontSize: 44, marginBottom: 14 }}>📄</div>
+          <h3 style={{ marginBottom: 8 }}>No claims found</h3>
+          <p style={{ color: "var(--text-secondary)" }}>You have not filed any claims yet.</p>
+        </div>
       ) : (
         claims.map((claim) => (
           <div
             key={claim.id}
+            className="chart-card"
             style={{
-              border: "1px solid #ccc",
-              borderRadius: "10px",
-              padding: "15px",
-              marginBottom: "15px",
+              marginBottom: 22,
+              borderRadius: 24,
+              padding: 24,
+              background: "rgba(255,255,255,0.55)",
+              backdropFilter: "blur(16px)",
+              border: "1px solid rgba(255,255,255,0.8)"
             }}
           >
-            <h3>{claim.id}</h3>
-            <p><strong>Policy:</strong> {claim.plan}</p>
-            <p><strong>Type:</strong> {claim.type}</p>
-            <p><strong>Amount:</strong> {claim.amount}</p>
-            <p><strong>Description:</strong> {claim.description}</p>
-            <p>
-              <strong>Status:</strong>{" "}
-              <span style={{ fontWeight: "bold" }}>
-                {claim.status}
-              </span>
-            </p>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                marginBottom: 20
+              }}
+            >
+              <div>
+                <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 10 }}>
+                  <span
+                    style={{
+                      padding: "6px 10px",
+                      borderRadius: 999,
+                      background: "rgba(56,189,248,0.14)",
+                      color: "#0284c7",
+                      fontWeight: 800,
+                      fontSize: 12
+                    }}
+                  >
+                    {claim.id}
+                  </span>
 
-            <div style={{ display: "flex", gap: "10px", marginTop: "10px", flexWrap: "wrap" }}>
-  
-  <button
-    style={{
-      padding: "6px 12px",
-      borderRadius: "6px",
-      border: "none",
-      backgroundColor: "#10b981",
-      color: "white",
-      cursor: "pointer"
-    }}
-    onClick={() => handleStatusChange(claim.id, "Approved")}
-  >
-    ✔ Approve
-  </button>
+                  <span className={`badge badge-${claim.status}`}>
+                    {claim.status.charAt(0).toUpperCase() + claim.status.slice(1)}
+                  </span>
+                </div>
 
-  <button
-    style={{
-      padding: "6px 12px",
-      borderRadius: "6px",
-      border: "none",
-      backgroundColor: "#ef4444",
-      color: "white",
-      cursor: "pointer"
-    }}
-    onClick={() => handleStatusChange(claim.id, "Rejected")}
-  >
-    ✖ Reject
-  </button>
+                <div style={{ fontWeight: 800, fontSize: 17, marginBottom: 6 }}>
+                  {claim.plan} ({claim.type})
+                </div>
 
-  <button
-    style={{
-      padding: "6px 12px",
-      borderRadius: "6px",
-      border: "none",
-      backgroundColor: "#f59e0b",
-      color: "white",
-      cursor: "pointer"
-    }}
-    onClick={() => handleStatusChange(claim.id, "Pending")}
-  >
-    ⏳ Pending
-  </button>
+                <div style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6, maxWidth: 640 }}>
+                  {claim.description}
+                </div>
+              </div>
 
-  <button
-    style={{
-      padding: "6px 12px",
-      borderRadius: "6px",
-      border: "none",
-      backgroundColor: "#6b7280",
-      color: "white",
-      cursor: "pointer"
-    }}
-    onClick={() => handleDelete(claim.id)}
-  >
-    🗑 Delete
-  </button>
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontSize: 24, fontWeight: 800, marginBottom: 4 }}>{claim.amount}</div>
+                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Filed: {claim.filed}</div>
+              </div>
+            </div>
 
-</div>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                gap: 14,
+                marginBottom: 22
+              }}
+            >
+              <div
+                style={{
+                  padding: 16,
+                  borderRadius: 16,
+                  background: "rgba(2,132,199,0.08)",
+                  display: "flex",
+                  gap: 10,
+                  alignItems: "center"
+                }}
+              >
+                <MdDescription style={{ fontSize: 22, color: "#0284c7" }} />
+                <div>
+                  <div style={{ fontSize: 12, color: "#64748b" }}>Claim Type</div>
+                  <div style={{ fontWeight: 700 }}>{claim.type}</div>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  padding: 16,
+                  borderRadius: 16,
+                  background: "rgba(234,179,8,0.10)",
+                  display: "flex",
+                  gap: 10,
+                  alignItems: "center"
+                }}
+              >
+                <MdPendingActions style={{ fontSize: 22, color: "#ca8a04" }} />
+                <div>
+                  <div style={{ fontSize: 12, color: "#64748b" }}>Current Status</div>
+                  <div style={{ fontWeight: 700, textTransform: "capitalize" }}>{claim.status}</div>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  padding: 16,
+                  borderRadius: 16,
+                  background: "rgba(34,197,94,0.10)",
+                  display: "flex",
+                  gap: 10,
+                  alignItems: "center"
+                }}
+              >
+                <MdPayments style={{ fontSize: 22, color: "#16a34a" }} />
+                <div>
+                  <div style={{ fontSize: 12, color: "#64748b" }}>Amount</div>
+                  <div style={{ fontWeight: 700 }}>{claim.amount}</div>
+                </div>
+              </div>
+            </div>
+
+            <div
+              style={{
+                background: "rgba(248,250,252,0.95)",
+                borderRadius: 18,
+                padding: 18,
+                border: "1px solid #e2e8f0"
+              }}
+            >
+              <h4 style={{ margin: "0 0 14px 0", fontSize: 15, fontWeight: 800 }}>Claim Progress</h4>
+
+              <div className="claim-timeline">
+                {claim.timeline?.map((step, idx) => (
+                  <div key={idx} className="timeline-item">
+                    <div
+                      className={`timeline-dot ${
+                        step.done ? (step.active ? "active" : "done") : "pending"
+                      }`}
+                    >
+                      {step.done && !step.active && (
+                        <span style={{ fontSize: 10, color: "var(--emerald)" }}>
+                          <MdCheckCircle />
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="timeline-content">
+                      <div className="timeline-title">{step.label}</div>
+                      <div className="timeline-meta">{step.date}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         ))
       )}

@@ -1,25 +1,38 @@
 export const getUserData = () => {
-    const saved = localStorage.getItem("normalUserData");
-  
-    if (saved) return JSON.parse(saved);
-  
+  const raw = localStorage.getItem("easyinsure_user_data");
+
+  if (raw) {
+    const parsed = JSON.parse(raw);
+
     return {
-      profile: {
-        fullName: "",
-        email: "",
-        mobile: "",
-        dob: "",
-        gender: "",
-        address: "",
-        pan: "",
-        nomineeName: ""
+      profile: parsed.profile || {
+        name: "Sneha Tripathi",
+        email: "sneha@example.com",
+        phone: "+91 9876543210",
+        address: "Mathura, Uttar Pradesh"
       },
-      policies: [],
-      claims: [],
-      notifications: []
+      policies: parsed.policies || [],
+      claims: parsed.claims || [],
+      notifications: parsed.notifications || []
     };
+  }
+
+  const defaultData = {
+    profile: {
+      name: "Sneha Tripathi",
+      email: "sneha@example.com",
+      phone: "+91 9876543210",
+      address: "Mathura, Uttar Pradesh"
+    },
+    policies: [],
+    claims: [],
+    notifications: []
   };
-  
-  export const saveUserData = (data) => {
-    localStorage.setItem("normalUserData", JSON.stringify(data));
-  };
+
+  localStorage.setItem("easyinsure_user_data", JSON.stringify(defaultData));
+  return defaultData;
+};
+
+export const saveUserData = (data) => {
+  localStorage.setItem("easyinsure_user_data", JSON.stringify(data));
+};
