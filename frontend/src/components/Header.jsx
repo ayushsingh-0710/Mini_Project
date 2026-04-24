@@ -1,3 +1,4 @@
+import { getUserData } from '../utils/storage';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { MdSearch, MdNotifications, MdRefresh, MdFullscreen, MdMenu, MdClose, MdPolicy, MdAssignment, MdPeople, MdSupportAgent } from 'react-icons/md';
 import { usePortal } from '../context/PortalContext';
@@ -63,6 +64,8 @@ const Header = ({ currentPath, onMenuClick }) => {
 
   // Preload all data once for instant search
   useEffect(() => {
+
+    
     const preload = async () => {
       try {
         const [pRes, cRes, uRes, aRes] = await Promise.all([
@@ -89,38 +92,45 @@ const Header = ({ currentPath, onMenuClick }) => {
 
   // Run search against preloaded data
   useEffect(() => {
-    if (!debouncedSearch.trim()) {
-      setSearchResults([]);
-      setShowSearchDrop(false);
+    if (portal === "user") {
+      const data = getUserData();
+      const q = debouncedSearch.toLowerCase();
+    
+      const policyMatches = (data.policies || [])
+        .filter(p =>
+          p.name?.toLowerCase().includes(q) ||
+          p.status?.toLowerCase().includes(q)
+        )
+        .slice(0, 5)
+        .map(p => ({
+          kind: "policy",
+          id: p.id,
+          title: p.name,
+          subtitle: `Policy · ${p.status}`,
+          status: p.status
+        }));
+    
+      const claimMatches = (data.claims || [])
+        .filter(c =>
+          c.plan?.toLowerCase().includes(q) ||
+          c.type?.toLowerCase().includes(q) ||
+          c.description?.toLowerCase().includes(q)
+        )
+        .slice(0, 5)
+        .map(c => ({
+          kind: "claim",
+          id: c.id,
+          title: c.id,
+          subtitle: `${c.plan} · ${c.type} · ${c.status}`,
+          status: c.status
+        }));
+    
+      setSearchResults([...policyMatches, ...claimMatches]);
+      setShowSearchDrop(true);
+      setSearchLoading(false);
       return;
-    }
-    setSearchLoading(true);
-    const q = debouncedSearch.toLowerCase();
-
-    const policyMatches = allData.policies
-      .filter(p => p.id?.toLowerCase().includes(q) || p.holder?.toLowerCase().includes(q) || p.type?.toLowerCase().includes(q) || p.plan?.toLowerCase().includes(q))
-      .slice(0, 3)
-      .map(p => ({ kind: 'policy', id: p.id, title: p.id, subtitle: `${p.holder} · ${p.type} · ${p.status}`, status: p.status }));
-
-    const claimMatches = allData.claims
-      .filter(c => c.id?.toLowerCase().includes(q) || c.holder?.toLowerCase().includes(q) || c.type?.toLowerCase().includes(q))
-      .slice(0, 3)
-      .map(c => ({ kind: 'claim', id: c.id, title: c.id, subtitle: `${c.holder} · ${c.type} · ${c.status}`, status: c.status }));
-
-    const userMatches = allData.users
-      .filter(u => u.name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q) || u.city?.toLowerCase().includes(q))
-      .slice(0, 3)
-      .map(u => ({ kind: 'user', id: u.id, title: u.name, subtitle: `${u.email} · ${u.city}`, status: u.status }));
-
-    const agentMatches = allData.agents
-      .filter(a => a.name?.toLowerCase().includes(q) || a.email?.toLowerCase().includes(q) || a.specialization?.toLowerCase().includes(q))
-      .slice(0, 2)
-      .map(a => ({ kind: 'agent', id: a.id, title: a.name, subtitle: `${a.specialization} · ${a.city}`, status: a.status }));
-
-    const results = [...policyMatches, ...claimMatches, ...userMatches, ...agentMatches];
-    setSearchResults(results);
-    setShowSearchDrop(true);
-    setSearchLoading(false);
+    } 
+ 
   }, [debouncedSearch, allData]);
 
   // Close search on outside click

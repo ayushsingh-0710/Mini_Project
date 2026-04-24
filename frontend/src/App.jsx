@@ -1,3 +1,4 @@
+import ClaimStatus from './pages/user/ClaimStatus';
 import BuyPolicy from './pages/user/BuyPolicy';
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
@@ -75,6 +76,7 @@ const AppShell = () => {
           <Route path="/user/profile"   element={<Profile />} />
           <Route path="/user/support"   element={<Support />} />
           <Route path="/user/buy-policy" element={<BuyPolicy />} />
+          <Route path="/user/claim-status" element={<ClaimStatus />} />
 
           {/* Default redirect inside shell */}
           <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
