@@ -6,24 +6,33 @@ import { usePortal } from '../context/PortalContext';
 const Login = () => {
   const navigate = useNavigate();
   const { switchPortal } = usePortal();
-  
+
   const [formData, setFormData] = useState({ username: '', password: '' });
-  const [role, setRole] = useState('user'); // Toggleable role
+  const [role, setRole] = useState('user');
 
   const handleLogin = async (e) => {
     e.preventDefault();
+
     try {
-      const response = await fetch('https://mini-project-g2lv.onrender.com/api/auth/login', {
+      const response = await fetch('http://localhost:5000/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: formData.username, password: formData.password, role })
       });
+
       const data = await response.json();
-      
+
       if (response.ok) {
         localStorage.setItem('token', data.token);
         switchPortal(role);
-        navigate(role === 'admin' ? '/admin/dashboard' : '/user/dashboard');
+
+        if (role === 'admin') {
+          navigate('/admin/dashboard');
+        } else if (role === 'agent') {
+          navigate('/agent/dashboard');
+        } else {
+          navigate('/user/dashboard');
+        }
       } else {
         alert(data.message || 'Login failed');
       }
@@ -32,6 +41,20 @@ const Login = () => {
       alert('Error connecting to server. Make sure the backend is running.');
     }
   };
+
+  const roleButtonStyle = (currentRole) => ({
+    flex: 1,
+    padding: '10px',
+    borderRadius: '8px',
+    border: 'none',
+    background: role === currentRole ? '#fff' : 'transparent',
+    color: role === currentRole ? '#11b2ac' : '#64748b',
+    fontWeight: 700,
+    fontSize: '13px',
+    cursor: 'pointer',
+    boxShadow: role === currentRole ? '0 2px 8px rgba(0,0,0,0.06)' : 'none',
+    transition: 'all 0.2s'
+  });
 
   return (
     <div style={{
@@ -42,7 +65,6 @@ const Login = () => {
       background: 'linear-gradient(135deg, #71c5ef 0%, #cdb4db 50%, #b5e48c 100%)',
       fontFamily: "'Inter', sans-serif"
     }}>
-      {/* Main Glass Card */}
       <div style={{
         display: 'flex',
         width: '100%',
@@ -57,8 +79,7 @@ const Login = () => {
         overflow: 'hidden',
         position: 'relative'
       }}>
-        
-        {/* Left Side */}
+
         <div style={{
           flex: 1.1,
           padding: '60px 40px',
@@ -69,21 +90,19 @@ const Login = () => {
           color: '#fff',
           position: 'relative',
         }}>
-          {/* Logo Top Left */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', position: 'absolute', top: 30, left: 30 }}>
-             <MdOutlineShield style={{ fontSize: 22 }} />
-             <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase' }}>EASYINSURE</span>
+            <MdOutlineShield style={{ fontSize: 22 }} />
+            <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase' }}>EASYINSURE</span>
           </div>
 
           <h1 style={{ fontSize: '42px', fontWeight: 800, marginBottom: '20px', lineHeight: '1.1', maxWidth: '300px' }}>
-            Secure Your<br/>Future Today.
+            Secure Your<br />Future Today.
           </h1>
           <p style={{ fontSize: '15px', lineHeight: '1.6', opacity: 0.9, maxWidth: '320px' }}>
             The most advanced insurance management platform for modern professionals and families.
           </p>
         </div>
 
-        {/* Right Side - Login Form */}
         <div style={{
           flex: 0.9,
           padding: '50px 40px',
@@ -92,52 +111,66 @@ const Login = () => {
           justifyContent: 'center',
           position: 'relative',
         }}>
-          
-          <button 
+
+          <button
             type="button"
             style={{
-              position: 'absolute', top: 25, left: 35,
-              background: 'none', border: 'none', color: '#4b5563',
-              fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px',
-              cursor: 'pointer', padding: 0
+              position: 'absolute',
+              top: 25,
+              left: 35,
+              background: 'none',
+              border: 'none',
+              color: '#4b5563',
+              fontSize: '12px',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              cursor: 'pointer',
+              padding: 0
             }}
           >
             <MdArrowBack /> Back to Selection
           </button>
 
           <div style={{ marginBottom: '25px', marginTop: '10px' }}>
-            <h2 style={{ fontSize: '28px', fontWeight: 800, color: '#1f2937', marginBottom: '16px' }}>{role === 'admin' ? 'Admin Login' : 'User Login'}</h2>
-            
-            {/* Role Toggle Selector */}
-            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.7)', borderRadius: '12px', padding: '4px', border: '1px solid rgba(0,0,0,0.05)', marginBottom: '16px' }}>
-              <button
-                type="button"
-                onClick={() => setRole('user')}
-                style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: role === 'user' ? '#fff' : 'transparent', color: role === 'user' ? '#11b2ac' : '#64748b', fontWeight: 700, fontSize: '13px', cursor: 'pointer', boxShadow: role === 'user' ? '0 2px 8px rgba(0,0,0,0.06)' : 'none', transition: 'all 0.2s' }}
-              >
+            <h2 style={{ fontSize: '28px', fontWeight: 800, color: '#1f2937', marginBottom: '16px' }}>
+              {role === 'admin' ? 'Admin Login' : role === 'agent' ? 'Agent Login' : 'User Login'}
+            </h2>
+
+            <div style={{
+              display: 'flex',
+              background: 'rgba(255,255,255,0.7)',
+              borderRadius: '12px',
+              padding: '4px',
+              border: '1px solid rgba(0,0,0,0.05)',
+              marginBottom: '16px'
+            }}>
+              <button type="button" onClick={() => setRole('user')} style={roleButtonStyle('user')}>
                 User
               </button>
-              <button
-                type="button"
-                onClick={() => setRole('admin')}
-                style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: role === 'admin' ? '#fff' : 'transparent', color: role === 'admin' ? '#11b2ac' : '#64748b', fontWeight: 700, fontSize: '13px', cursor: 'pointer', boxShadow: role === 'admin' ? '0 2px 8px rgba(0,0,0,0.06)' : 'none', transition: 'all 0.2s' }}
-              >
+
+              <button type="button" onClick={() => setRole('admin')} style={roleButtonStyle('admin')}>
                 Admin
+              </button>
+
+              <button type="button" onClick={() => setRole('agent')} style={roleButtonStyle('agent')}>
+                Agent
               </button>
             </div>
 
-            <p style={{ fontSize: '13px', color: '#4b5563' }}>Enter your credentials to access your dashboard</p>
+            <p style={{ fontSize: '13px', color: '#4b5563' }}>
+              Enter your credentials to access your dashboard
+            </p>
           </div>
 
           <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            
-            {/* Input Group Username */}
             <div style={{ position: 'relative' }}>
-              <input 
-                type="text" 
-                placeholder="Username or Email" 
+              <input
+                type="text"
+                placeholder="Username or Email"
                 value={formData.username}
-                onChange={(e) => setFormData({...formData, username: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                 required
                 style={{
                   width: '100%',
@@ -155,14 +188,13 @@ const Login = () => {
               <MdPersonOutline style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', color: '#4b5563', fontSize: 18 }} />
             </div>
 
-            {/* Input Group Password */}
             <div style={{ position: 'relative' }}>
-              <input 
-                type="password" 
-                placeholder="Password" 
+              <input
+                type="password"
+                placeholder="Password"
                 value={formData.password}
                 required
-                onChange={(e) => setFormData({...formData, password: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 style={{
                   width: '100%',
                   padding: '14px 16px',
@@ -179,13 +211,12 @@ const Login = () => {
               <MdLockOutline style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', color: '#4b5563', fontSize: 18 }} />
             </div>
 
-            {/* Submit */}
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               style={{
                 marginTop: '10px',
                 padding: '14px',
-                background: '#11b2ac', // Teal color
+                background: '#11b2ac',
                 color: '#fff',
                 border: 'none',
                 borderRadius: '10px',
@@ -199,10 +230,12 @@ const Login = () => {
             >
               SIGN IN AS {role.toUpperCase()}
             </button>
-            
+
             <div style={{ textAlign: 'center', marginTop: '10px', fontSize: '13px' }}>
-               <span style={{ color: '#4b5563' }}>Don't have an account? </span>
-               <Link to={`/register?role=${role}`} style={{ color: '#11b2ac', fontWeight: 600, textDecoration: 'none' }}>Register here</Link>
+              <span style={{ color: '#4b5563' }}>Don't have an account? </span>
+              <Link to={`/register?role=${role}`} style={{ color: '#11b2ac', fontWeight: 600, textDecoration: 'none' }}>
+                Register here
+              </Link>
             </div>
           </form>
         </div>

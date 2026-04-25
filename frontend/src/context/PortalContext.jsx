@@ -3,11 +3,15 @@ import React, { createContext, useContext, useState, useCallback } from 'react';
 const PortalContext = createContext();
 
 export const PortalProvider = ({ children }) => {
-  const [portal, setPortal] = useState('admin'); // 'admin' | 'user'
+  const [portal, setPortal] = useState(localStorage.getItem('portal') || 'admin');
   const [refreshKey, setRefreshKey] = useState(0);
-  const [userRole, setUserRole] = useState('normal'); // 'normal' | 'admin'
+  const [userRole, setUserRole] = useState('normal');
 
-  const switchPortal = (p) => setPortal(p);
+  const switchPortal = (p) => {
+    setPortal(p);
+    localStorage.setItem('portal', p);
+  };
+
   const switchUserRole = (r) => setUserRole(r);
 
   const triggerRefresh = useCallback(() => {
