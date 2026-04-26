@@ -9,6 +9,10 @@ const adminRouter = require('./routers/admin.router');
 const chatbotRouter = require('./routers/chatbot.router');
 const quotesRouter = require('./routers/quotes.router');
 const userRoutes = require('./routers/userRoutes');
+const policyRouter = require('./routers/policy.router');
+const purchaseRouter = require('./routers/purchase.router');
+const claimRouter = require('./routers/claim.router');
+const paymentRouter = require('./routers/payment.router');
 
 const app = express();
 
@@ -29,6 +33,10 @@ app.use('/api/admin', adminRouter);
 app.use('/api/chat', chatbotRouter);
 app.use('/api/quotes', quotesRouter);
 app.use('/api/users', userRoutes);
+app.use('/api/policies', policyRouter);
+app.use('/api/purchases', purchaseRouter);
+app.use('/api/claims', claimRouter);
+app.use('/api/payments', paymentRouter);
 
 // 404 Handler
 app.use((req, res, next) => {

@@ -10,6 +10,8 @@ import {
   MdLaptopMac,
   MdClose
 } from "react-icons/md";
+import { getAllPolicies } from "../../api/policyApi";
+import { useNavigate } from "react-router-dom";
 import Partners from "../../components/Partners";
 import Footer from "../../components/Footer";
 
@@ -216,18 +218,71 @@ const UserDashboard = () => {
   const [selectedMoreProduct, setSelectedMoreProduct] = useState(null);
   const [showQuotes, setShowQuotes] = useState(false);
   const [showMoreProductQuotes, setShowMoreProductQuotes] = useState(false);
+  const [apiPolicies, setApiPolicies] = useState([]);
+  const [loadingPolicies, setLoadingPolicies] = useState(true);
+  const [policyError, setPolicyError] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const data = getUserData();
-    const policies = data.policies || [];
-    const claims = data.claims || [];
     const profile = data.profile || {};
-
     setProfileName(profile.name || profile.fullName || "User");
-    setTotalPolicies(policies.length);
-    setActivePolicies(policies.filter((p) => p.status === "active").length);
-    setTotalClaims(claims.length);
-    setApprovedClaims(claims.filter((c) => c.status === "approved").length);
+
+    const fetchDashboardData = async () => {
+      const token = localStorage.getItem("token");
+      let uid = null;
+      if (token) {
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          uid = payload.id;
+        } catch(e) {}
+      }
+
+      if (uid) {
+         try {
+           const [purchasesRes, claimsRes] = await Promise.all([
+             fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/purchases/user/${uid}`),
+             fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/claims/user/${uid}`)
+           ]);
+           
+           if(purchasesRes.ok) {
+             const pData = await purchasesRes.json();
+             if(pData.success && pData.data) {
+                setTotalPolicies(pData.data.length);
+                setActivePolicies(pData.data.filter(p => p.status === 'active').length);
+             }
+           }
+           
+           if(claimsRes.ok) {
+             const cData = await claimsRes.json();
+             if(cData.success && cData.data) {
+                setTotalClaims(cData.data.length);
+                setApprovedClaims(cData.data.filter(c => c.status === 'approved').length);
+             }
+           }
+         } catch(err) {
+           console.error("Error fetching dashboard stats:", err);
+         }
+      }
+    };
+
+    fetchDashboardData();
+
+    const fetchApiPolicies = async () => {
+      try {
+        const response = await getAllPolicies();
+        if (response.success && response.data) {
+          setApiPolicies(response.data);
+        } else {
+          setPolicyError("Unable to load policies");
+        }
+      } catch (err) {
+        setPolicyError("Unable to load policies");
+      } finally {
+        setLoadingPolicies(false);
+      }
+    };
+    fetchApiPolicies();
   }, []);
 
   const refreshStats = () => {
@@ -399,327 +454,68 @@ const UserDashboard = () => {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
+          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
           gap: "20px",
-          maxWidth: "900px",
+          width: "100%",
           padding: "20px",
           background: "rgba(255, 255, 255, 0.4)",
           backdropFilter: "blur(16px)",
           borderRadius: "24px",
           border: "1px solid rgba(255, 255, 255, 0.6)",
           boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.1)",
-          position: "relative"
         }}
       >
-        {insurances.map((ins) => (
-          <div
-            key={ins.id}
-            onClick={() => {
-              setSelectedPolicy(ins);
-              setShowMoreProducts(false);
-              setShowQuotes(false);
-            }}
-            style={{
-              padding: "24px 16px",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "10px",
-              background: selectedPolicy?.id === ins.id ? "var(--bg-secondary)" : "var(--bg-card)",
-              border: selectedPolicy?.id === ins.id ? "2px solid var(--blue-light)" : "1px solid rgba(255,255,255,0.7)",
-              borderRadius: "16px",
-              cursor: "pointer",
-              transition: "all 0.2s",
-              boxShadow: selectedPolicy?.id === ins.id ? "0 10px 25px -5px rgba(56, 189, 248, 0.3)" : "none",
-              textAlign: "center"
-            }}
-          >
+        <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+          <h3 style={{ margin: 0, fontSize: 18, color: "var(--text-primary)" }}>Top Available Policies</h3>
+        </div>
+
+        {loadingPolicies ? (
+          <p style={{ gridColumn: "1 / -1" }}>Loading policies...</p>
+        ) : policyError ? (
+          <p style={{ gridColumn: "1 / -1", color: "red" }}>{policyError}</p>
+        ) : apiPolicies.length === 0 ? (
+          <p style={{ gridColumn: "1 / -1" }}>No policies available.</p>
+        ) : (
+          apiPolicies.slice(0, 8).map((policy) => (
             <div
+              key={policy.id}
               style={{
-                fontSize: 40,
-                background: "rgba(255,255,255,0.5)",
-                padding: "16px",
-                borderRadius: "50%",
+                padding: "20px",
                 display: "flex",
-                alignItems: "center",
-                justifyContent: "center"
+                flexDirection: "column",
+                gap: "10px",
+                background: "var(--bg-card)",
+                border: "1px solid rgba(255,255,255,0.7)",
+                borderRadius: "16px",
+                boxShadow: "0 4px 15px rgba(0,0,0,0.05)",
+                textAlign: "left"
               }}
             >
-              {ins.icon}
-            </div>
-
-            <span
-              style={{
-                fontSize: 13,
-                fontWeight: 700,
-                color: selectedPolicy?.id === ins.id ? "var(--blue-dark)" : "var(--text-primary)"
-              }}
-            >
-              {ins.title}
-            </span>
-
-            <span style={{ fontSize: 11, color: "var(--text-secondary)", fontWeight: 600 }}>
-              {ins.short}
-            </span>
-          </div>
-        ))}
-      </div>
-
-      {selectedPolicy && !showMoreProducts && (
-        <div
-          style={{
-            position: "absolute",
-            top: "280px",
-            right: "40px",
-            width: "500px",
-            background: "rgba(255, 255, 255, 0.96)",
-            backdropFilter: "blur(20px)",
-            borderRadius: "18px",
-            padding: "28px",
-            boxShadow: "0 20px 40px -10px rgba(0,0,0,0.15)",
-            border: "1px solid rgba(255,255,255,0.8)",
-            zIndex: 10
-          }}
-        >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18 }}>
-            <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-              <div
-                style={{
-                  width: 54,
-                  height: 54,
-                  borderRadius: "16px",
-                  background: "rgba(248,250,252,0.95)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 28
-                }}
-              >
-                {selectedPolicy.icon}
-              </div>
-
-              <div>
-                <h2 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>{selectedPolicy.title}</h2>
-                <p style={{ margin: "4px 0 0 0", fontSize: 13, color: "var(--text-secondary)" }}>
-                  {selectedPolicy.short}
-                </p>
-              </div>
-            </div>
-
-            <button
-              onClick={() => {
-                setSelectedPolicy(null);
-                setShowQuotes(false);
-              }}
-              style={{
-                background: "transparent",
-                border: "none",
-                fontSize: 22,
-                color: "var(--text-muted)",
-                cursor: "pointer"
-              }}
-            >
-              <MdClose />
-            </button>
-          </div>
-
-          <p style={{ fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.7, marginBottom: 18 }}>
-            {selectedPolicy.description}
-          </p>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(2, 1fr)",
-              gap: 10,
-              marginBottom: 20
-            }}
-          >
-            {selectedPolicy.features.map((feature, idx) => (
-              <div
-                key={idx}
-                style={{
-                  background: "#f8fafc",
-                  border: "1px solid #e2e8f0",
-                  borderRadius: "12px",
-                  padding: "10px 12px",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: "#334155"
-                }}
-              >
-                {feature}
-              </div>
-            ))}
-          </div>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <div style={{ display: "flex", gap: 14 }}>
-              <div style={{ flex: 1 }}>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6, color: "#64748b" }}>
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  placeholder="Enter your name"
-                  style={{
-                    width: "100%",
-                    padding: "11px 14px",
-                    borderRadius: 10,
-                    border: "1px solid #dbe2ea",
-                    background: "#f8fafc",
-                    fontSize: 13
-                  }}
-                />
-              </div>
-
-              <div style={{ flex: 1 }}>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6, color: "#64748b" }}>
-                  Mobile Number
-                </label>
-                <input
-                  type="text"
-                  placeholder="Enter mobile"
-                  style={{
-                    width: "100%",
-                    padding: "11px 14px",
-                    borderRadius: 10,
-                    border: "1px solid #dbe2ea",
-                    background: "#f8fafc",
-                    fontSize: 13
-                  }}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 6, color: "#64748b" }}>
-                Email Address
-              </label>
-              <input
-                type="email"
-                placeholder="Enter email"
-                style={{
-                  width: "100%",
-                  padding: "11px 14px",
-                  borderRadius: 10,
-                  border: "1px solid #dbe2ea",
-                  background: "#f8fafc",
-                  fontSize: 13
-                }}
-              />
-            </div>
-
-            <label
-              style={{
-                display: "flex",
-                alignItems: "flex-start",
-                gap: 10,
-                fontSize: 12,
-                color: "#64748b",
-                lineHeight: 1.5,
-                cursor: "pointer"
-              }}
-            >
-              <input type="checkbox" defaultChecked style={{ marginTop: 2 }} />
-              <span>
-                I agree to the <span style={{ color: "#0f172a", fontWeight: 700 }}>Terms of Use</span> and{" "}
-                <span style={{ color: "#0f172a", fontWeight: 700 }}>Privacy Policy</span>
-              </span>
-            </label>
-
-            <div style={{ display: "flex", gap: 12, marginTop: 4 }}>
+              <h4 style={{ margin: 0, fontSize: 16, color: "var(--text-primary)" }}>{policy.name}</h4>
+              <span style={{ fontSize: 12, fontWeight: 700, color: "var(--blue-dark)" }}>{policy.provider}</span>
+              <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>Type: {policy.type}</span>
+              <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>Premium: ₹{policy.premium?.toLocaleString()}</span>
+              <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>Coverage: ₹{policy.coverageAmount?.toLocaleString()}</span>
+              
               <button
-                type="button"
-                onClick={() => handleBuyPolicy(selectedPolicy)}
+                onClick={() => navigate("/user/buy-policy")}
                 style={{
-                  flex: 1,
-                  background: "#fff",
-                  color: "#0284c7",
-                  border: "1px solid #38bdf8",
-                  padding: "13px",
-                  borderRadius: "10px",
-                  fontSize: 14,
-                  fontWeight: 700,
+                  marginTop: "auto",
+                  padding: "8px 12px",
+                  background: "var(--blue-light)",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontWeight: 600,
                   cursor: "pointer"
                 }}
               >
-                Buy Policy
-              </button>
-
-              <button
-                type="button"
-                onClick={handleViewPrices}
-                style={{
-                  flex: 1,
-                  background: "linear-gradient(135deg, #0284c7, #38bdf8)",
-                  color: "#fff",
-                  border: "none",
-                  padding: "13px",
-                  borderRadius: "10px",
-                  fontSize: 14,
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  boxShadow: "0 4px 14px rgba(56, 189, 248, 0.35)"
-                }}
-              >
-                View Prices
+                View / Buy
               </button>
             </div>
-
-            {showQuotes && (
-              <div style={{ marginTop: 10 }}>
-                <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 12, color: "#0f172a" }}>
-                  Available Quotes
-                </h3>
-
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  {currentQuotes.map((quote, index) => (
-                    <div
-                      key={index}
-                      style={{
-                        padding: "14px",
-                        borderRadius: "12px",
-                        border: "1px solid #e2e8f0",
-                        background: "#f8fafc",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        gap: 12
-                      }}
-                    >
-                      <div>
-                        <div style={{ fontWeight: 800, fontSize: 14, color: "#0f172a" }}>{quote.company}</div>
-                        <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>{quote.cover}</div>
-                      </div>
-
-                      <div style={{ fontWeight: 800, fontSize: 16, color: "#0284c7" }}>{quote.price}</div>
-
-                      <button
-                        type="button"
-                        onClick={() => handleBuyPolicy({ title: `${selectedPolicy.title} - ${quote.company}` })}
-                        style={{
-                          background: "#fff",
-                          color: "#0284c7",
-                          border: "1px solid #38bdf8",
-                          padding: "8px 12px",
-                          borderRadius: "8px",
-                          fontSize: 12,
-                          fontWeight: 700,
-                          cursor: "pointer"
-                        }}
-                      >
-                        Buy
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+          ))
+        )}
+      </div>
 
       {showMoreProducts && (
         <div

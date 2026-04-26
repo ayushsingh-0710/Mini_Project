@@ -18,8 +18,8 @@ router.delete('/policies/:id', adminController.deletePolicy);
 
 // Claim routes
 router.get('/claims', adminController.getClaims);
-router.post('/claims', adminController.createClaim);
-router.put('/claims/:id/status', adminController.updateClaimStatus);
+// Do not serve user claim creation from admin router, so removing router.post('/claims', ...)
+router.patch('/claims/:id/status', adminController.updateClaimStatus);
 
 // User routes
 router.get('/users', adminController.getUsers);

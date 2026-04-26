@@ -18,17 +18,14 @@ const parseCurrency = (str) => {
 };
 
 // Helper to format numbers back to currency strings
-const formatCurrency = (num) => {
-  if (num >= 100000) return `₹${(num / 100000).toFixed(1)}L`;
-  return `₹${num.toLocaleString('en-IN')}`;
-};
+const formatCurrency = (value) => `₹${Number(value || 0).toLocaleString('en-IN')}`;
 
 const getDashboardData = async (req, res) => {
   try {
     const policies = await Policy.find();
     const claims = await Claim.find().sort({ createdAt: -1 });
     const users = await User.find();
-    
+
     // 1. Stats Calculation
     const totalPolicies = policies.length;
     const totalRevenueNum = policies.reduce((acc, p) => acc + parseCurrency(p.premium), 0);
@@ -48,15 +45,15 @@ const getDashboardData = async (req, res) => {
     // 2. Revenue vs Claims Chart Data (Last 8 months)
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const monthsToShow = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'];
-    
+
     const revenueData = monthsToShow.map(m => {
       const monthIdx = monthNames.indexOf(m) + 1;
       const monthStr = monthIdx < 10 ? `0${monthIdx}` : `${monthIdx}`;
       const rev = policies.filter(p => p.start && p.start.includes(`-${monthStr}-`)).reduce((acc, p) => acc + parseCurrency(p.premium), 0);
-      const clm = claims.filter(c => c.filed && c.filed.includes(`-${monthStr}-`)).reduce((acc, c) => acc + parseCurrency(c.amount), 0);
-      return { 
-        month: m, 
-        revenue: rev || 0, 
+      const clm = claims.filter(c => c.date && (new Date(c.date).getMonth() + 1) === monthIdx).reduce((acc, c) => acc + parseCurrency(c.amount), 0);
+      return {
+        month: m,
+        revenue: rev || 0,
         claims: clm || 0,
         policies: policies.filter(p => p.start && p.start.includes(`-${monthStr}-`)).length
       };
@@ -64,11 +61,11 @@ const getDashboardData = async (req, res) => {
 
     // 3. Policy Type Distribution (Percentage calculation)
     const policyTypes = ['Health Insurance', 'Auto Insurance', 'Life Insurance', 'Home Insurance'];
-    const typeCounts = policyTypes.map(name => 
+    const typeCounts = policyTypes.map(name =>
       policies.filter(p => p.type.toLowerCase().includes(name.split(' ')[0].toLowerCase())).length
     );
     const totalTypeCount = typeCounts.reduce((a, b) => a + b, 0) || 100;
-    
+
     const policyTypeData = policyTypes.map((name, i) => ({
       name,
       value: typeCounts[i] > 0 ? Math.round((typeCounts[i] / totalTypeCount) * 100) : 0,
@@ -77,29 +74,30 @@ const getDashboardData = async (req, res) => {
 
     // 4. Recent Claims
     const recentClaims = claims.length > 0 ? claims.slice(0, 4).map(c => ({
-      id: c.id,
-      holder: c.holder,
-      amount: c.amount,
+      id: c._id,
+      holder: c.userId?.name || c.userId || 'Unknown',
+      amount: formatCurrency(c.amount || 0),
       status: c.status,
       date: new Date(c.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+
     })) : [];
 
     // 5. Recent Activity
     const recentActivity = [
       ...policies.slice(0, 2).map(p => ({ title: `New policy issued: ${p.id}`, time: 'Recently', color: '#10b981' })),
-      ...claims.slice(0, 2).map(c => ({ title: `Claim ${c.id} status updated`, time: 'Recently', color: '#3b82f6' }))
+      ...claims.slice(0, 2).map(c => ({ title: `Claim status updated`, time: 'Recently', color: '#3b82f6' }))
     ];
-    
+
     // Removed hardcoded initial activity
 
-    res.status(200).json({ 
+    res.status(200).json({
       data: {
         stats,
         revenueData,
         policyTypeData,
         recentActivity,
         recentClaims: recentClaims.slice(0, 4)
-      } 
+      }
     });
   } catch (error) {
     console.error('DASHBOARD DATA ERROR:', error);
@@ -149,15 +147,18 @@ const deletePolicy = async (req, res) => {
 
 const getClaims = async (req, res) => {
   try {
-    let claims = await Claim.find();
+    let claims = await Claim.find().populate('userId', 'name email');
     if (claims.length === 0) {
-      const initial = [
-        { id: 'CLM-2001', holder: 'Rajesh Sharma', policy: 'POL-1001', type: 'Health', plan: 'Family Care Pro', amount: '₹45,000', filed: '2025-10-12', agent: 'Ravi Kumar', reason: 'Hospitalization for Dengue fever', status: 'pending' },
-        { id: 'CLM-2002', holder: 'Amit Verma', policy: 'POL-1002', type: 'Auto', plan: 'Comprehensive Car', amount: '₹12,500', filed: '2025-10-10', agent: 'Sneha Kapoor', reason: 'Front bumper damage in traffic accident', status: 'review' },
-        { id: 'CLM-2003', holder: 'Priya Patel', policy: 'POL-1003', type: 'Life', plan: 'Term Life Shield', amount: '₹1,00,00,000', filed: '2025-10-01', agent: 'Deepak Nair', reason: 'Death claim by beneficiary', status: 'approved' }
-      ];
-      await Claim.insertMany(initial);
-      claims = await Claim.find();
+      const user = await User.findOne();
+      if (user) {
+        const initial = [
+          { userId: user._id, policyName: 'Family Care Pro', claimType: 'Health', amount: 45000, date: new Date('2025-10-12'), description: 'Hospitalization for Dengue fever', status: 'pending' },
+          { userId: user._id, policyName: 'Comprehensive Car', claimType: 'Auto', amount: 12500, date: new Date('2025-10-10'), description: 'Front bumper damage in traffic accident', status: 'review' },
+          { userId: user._id, policyName: 'Term Life Shield', claimType: 'Life', amount: 10000000, date: new Date('2025-10-01'), description: 'Death claim by beneficiary', status: 'approved' }
+        ];
+        await Claim.insertMany(initial);
+        claims = await Claim.find().populate('userId', 'name email');
+      }
     }
     res.status(200).json({ data: claims });
   } catch (error) {
@@ -165,25 +166,9 @@ const getClaims = async (req, res) => {
   }
 };
 
-const createClaim = async (req, res) => {
-  try {
-    const newClaim = new Claim(req.body);
-    if (!newClaim.id) {
-      newClaim.id = `CLM-${Math.floor(2000 + Math.random() * 9000)}`;
-    }
-    if (!newClaim.status) {
-      newClaim.status = 'pending';
-    }
-    await newClaim.save();
-    res.status(201).json({ message: 'Claim created', data: newClaim });
-  } catch (error) {
-    res.status(500).json({ message: 'Error creating claim' });
-  }
-};
-
 const updateClaimStatus = async (req, res) => {
   try {
-    const claim = await Claim.findOneAndUpdate({ id: req.params.id }, { status: req.body.status }, { new: true });
+    const claim = await Claim.findByIdAndUpdate(req.params.id, { status: req.body.status }, { new: true });
     res.status(200).json({ message: 'Claim updated', data: claim });
   } catch (error) {
     res.status(500).json({ message: 'Error updating claim' });
@@ -307,7 +292,7 @@ const deleteAgent = async (req, res) => {
 const getReportData = async (req, res) => {
   try {
     const period = req.query.period || '2025-26';
-    
+
     // Fetch all data for dynamic aggregation
     const policies = await Policy.find();
     const claims = await Claim.find();
@@ -331,23 +316,23 @@ const getReportData = async (req, res) => {
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     // For this demonstration, we'll map the last 8 months including the current one
     const monthsToShow = ['Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'];
-    
+
     const monthlyData = monthsToShow.map(m => {
       const monthIdx = monthNames.indexOf(m) + 1;
       const monthStr = monthIdx < 10 ? `0${monthIdx}` : `${monthIdx}`;
-      
+
       const rev = policies
         .filter(p => p.start && p.start.includes(`-${monthStr}-`))
         .reduce((acc, p) => acc + parseCurrency(p.premium), 0);
-        
+
       const set = claims
-        .filter(c => c.status === 'approved' && c.filed && c.filed.includes(`-${monthStr}-`))
+        .filter(c => c.status === 'approved' && c.date && (new Date(c.date).getMonth() + 1) === monthIdx)
         .reduce((acc, c) => acc + parseCurrency(c.amount), 0);
-        
-      return { 
-        month: m, 
+
+      return {
+        month: m,
         revenue: rev || (monthsToShow.indexOf(m) * 25000 + 120000), // Seed fallback if empty for visual appeal
-        settled: set || (monthsToShow.indexOf(m) * 18000 + 45000) 
+        settled: set || (monthsToShow.indexOf(m) * 18000 + 45000)
       };
     });
 
@@ -375,7 +360,7 @@ const getReportData = async (req, res) => {
       { name: 'Under Review', status: 'review', color: '#f59e0b' },
       { name: 'Rejected', status: 'rejected', color: '#ef4444' }
     ];
-    
+
     const totalClaims = claims.length || 1;
     const settlementData = settlementStatuses.map(s => ({
       name: s.name,
@@ -396,7 +381,7 @@ const getReportData = async (req, res) => {
 
   } catch (error) {
     console.error('FETCH REPORT ERROR:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       message: 'Server Error fetching report data',
       error: error.message
     });
@@ -463,7 +448,6 @@ module.exports = {
   updatePolicy,
   deletePolicy,
   getClaims,
-  createClaim,
   updateClaimStatus,
   getUsers,
   createUser,

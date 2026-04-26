@@ -76,9 +76,9 @@ const ClaimDetailModal = ({ claim, onClose, onApprove, onReject }) => (
       <div className="modal-body">
         {[
           ['Claim ID', claim.id], ['Policy Holder', claim.holder],
-          ['Policy ID', claim.policy], ['Insurance Type', claim.type],
-          ['Plan', claim.plan], ['Claim Amount', claim.amount],
-          ['Filed On', claim.filed], ['Handled By', claim.agent],
+          ['Policy ID', claim.policy], ['Insurance Type', claim.claimType],
+          ['Claim Amount', `₹${Number(claim.amount || 0).toLocaleString('en-IN')}`],
+          ['Filed On', claim.date], ['Handled By', claim.agent],
         ].map(([l, v]) => (
           <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
             <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>{l}</span>
@@ -87,7 +87,7 @@ const ClaimDetailModal = ({ claim, onClose, onApprove, onReject }) => (
         ))}
         <div style={{ padding: '12px 0', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
           <span style={{ color: 'var(--text-muted)', fontSize: 12, display: 'block', marginBottom: 6 }}>REASON / DESCRIPTION</span>
-          <span style={{ color: 'var(--text-secondary)', fontSize: 13, lineHeight: 1.6 }}>{claim.reason}</span>
+          <span style={{ color: 'var(--text-secondary)', fontSize: 13, lineHeight: 1.6 }}>{claim.description}</span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', alignItems: 'center' }}>
           <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>Status</span>
@@ -123,15 +123,33 @@ const ClaimsManagement = () => {
     fetch(`${API_BASE_URL}/api/admin/claims`)
       .then(res => res.json())
       .then(data => {
-        if(data.data) setClaims(data.data);
+        if(data && data.data) {
+          const mapped = data.data.map(c => ({
+            id: c._id || 'Unknown ID',
+            holder: c.userId?.name || c.userId || 'Unknown',
+            policy: c.policyName || 'Standard',
+            claimType: c.claimType || 'Unknown',
+            amount: Number(c.amount || 0),
+            date: c.date ? new Date(c.date).toLocaleDateString() : 'N/A',
+            agent: 'Portal / Autocreated',
+            description: c.description || 'N/A',
+            status: c.status || 'pending'
+          }));
+          setClaims(mapped);
+        } else {
+          setClaims([]);
+        }
       })
-      .catch(console.error);
+      .catch(err => {
+        console.error(err);
+        setClaims([]);
+      });
   }, [refreshKey]);
 
   const approve = async (id) => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/admin/claims/${id}/status`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'approved' })
       });
@@ -142,7 +160,7 @@ const ClaimsManagement = () => {
   const reject = async (id) => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/admin/claims/${id}/status`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'rejected' })
       });
@@ -177,7 +195,7 @@ const ClaimsManagement = () => {
 
   const filtered = claims.filter(c => {
     if (filter.status !== 'All' && c.status !== filter.status) return false;
-    if (filter.type !== 'All' && c.type !== filter.type) return false;
+    if (filter.type !== 'All' && c.claimType !== filter.type) return false;
     if (filter.search && !c.holder.toLowerCase().includes(filter.search.toLowerCase()) && !c.id.toLowerCase().includes(filter.search.toLowerCase())) return false;
     return true;
   });
@@ -245,9 +263,9 @@ const ClaimsManagement = () => {
                 <td style={{ color: '#60a5fa', fontWeight: 700 }}>{c.id}</td>
                 <td className="name-cell">{c.holder}</td>
                 <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>{c.policy}</td>
-                <td>{c.type}</td>
-                <td style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{c.amount}</td>
-                <td style={{ fontSize: 12 }}>{c.filed}</td>
+                <td>{c.claimType}</td>
+                <td style={{ color: 'var(--text-primary)', fontWeight: 700 }}>₹{Number(c.amount || 0).toLocaleString('en-IN')}</td>
+                <td style={{ fontSize: 12 }}>{c.date}</td>
                 <td style={{ fontSize: 12 }}>{c.agent}</td>
                 <td><span className={`badge badge-${c.status}`}>{c.status.charAt(0).toUpperCase() + c.status.slice(1)}</span></td>
                 <td>

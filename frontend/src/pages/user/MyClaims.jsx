@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { getUserData, saveUserData } from "../../utils/storage";
+import API_BASE_URL from "../../apiConfig";
 import { MdAdd, MdUpload, MdCheckCircle } from "react-icons/md";
 
 const NewClaimModal = ({ onClose, onSubmit, policies }) => {
@@ -268,85 +269,94 @@ const MyClaims = () => {
   const [modal, setModal] = useState(false);
   const [claims, setClaims] = useState([]);
   const [policies, setPolicies] = useState([]);
+  const [userId, setUserId] = useState(null);
 
   useEffect(() => {
     const data = getUserData();
-
-    setClaims(data.claims || []);
-
     const defaultPolicies = [
       { id: 1, name: "Motor & Car Insurance" },
       { id: 2, name: "Home Insurance" },
       { id: 3, name: "Medical Insurance" }
     ];
+    setPolicies(data.policies && data.policies.length > 0 ? data.policies : defaultPolicies);
 
-    setPolicies(
-      data.policies && data.policies.length > 0 ? data.policies : defaultPolicies
-    );
-  }, []);
-
-  const handleSubmitClaim = (form) => {
-    const data = getUserData();
-
-    if (!data.claims) data.claims = [];
-    if (!data.notifications) data.notifications = [];
-
-    const newClaim = {
-      id: `CLM-${Date.now()}`,
-      plan: form.policy,
-      type: form.type,
-      status: "pending",
-      description: form.description,
-      amount: `₹${form.amount}`,
-      filed: new Date().toLocaleDateString(),
-      incidentDate: form.incidentDate,
-      documents: {
-        medicalBills: form.documents.medicalBills ? form.documents.medicalBills.name : "",
-        doctorReport: form.documents.doctorReport ? form.documents.doctorReport.name : "",
-        firReport: form.documents.firReport ? form.documents.firReport.name : "",
-        idProof: form.documents.idProof ? form.documents.idProof.name : ""
-      },
-      timeline: [
-        {
-          label: "Claim Filed",
-          date: new Date().toLocaleDateString(),
-          done: true,
-          active: false
-        },
-        {
-          label: "Under Review",
-          date: "In Progress",
-          done: true,
-          active: true
-        },
-        {
-          label: "Approved",
-          date: "Pending",
-          done: false,
-          active: false
-        },
-        {
-          label: "Payment Disbursed",
-          date: "Pending",
-          done: false,
-          active: false
+    const fetchClaims = async (uid) => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/claims/user/${uid}`);
+        const result = await res.json();
+        if (result.success) {
+          const mapped = result.data.map(c => ({
+            id: c._id,
+            plan: c.policyName || "Unknown",
+            type: c.claimType || "Unknown",
+            status: c.status || "pending",
+            description: c.description || "N/A",
+            amount: `₹${Number(c.amount || 0).toLocaleString('en-IN')}`,
+            filed: c.date ? new Date(c.date).toLocaleDateString() : "N/A",
+            timeline: [
+              { label: "Claim Filed", date: c.date ? new Date(c.date).toLocaleDateString() : "N/A", done: true, active: false },
+              { label: "Under Review", date: c.status === 'review' ? 'In Progress' : (c.status === 'pending' ? 'Pending' : 'Done'), done: c.status !== 'pending', active: c.status === 'review' || c.status === 'pending' },
+              { label: "Approved", date: c.status === 'approved' ? new Date().toLocaleDateString() : 'Pending', done: c.status === 'approved', active: c.status === 'approved' },
+              { label: c.status === 'rejected' ? "Rejected" : "Payment Disbursed", date: c.status === 'rejected' ? "Rejected" : "Pending", done: c.status === 'rejected', active: c.status === 'rejected' }
+            ]
+          }));
+          setClaims(mapped);
+          return;
         }
-      ]
+      } catch (err) {
+        console.error("Failed to fetch claims", err);
+      }
+      // removed fallback to data.claims
     };
 
-    data.claims.unshift(newClaim);
+    const token = localStorage.getItem("token");
+    let uid = null;
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload && payload.id) {
+          uid = payload.id;
+        }
+      } catch (e) {}
+    }
+    
+    setUserId(uid);
+    if (uid) {
+      fetchClaims(uid);
+    }
+  }, []);
 
-    data.notifications.unshift({
-      id: Date.now(),
-      message: `Claim submitted for ${form.policy}`,
-      time: new Date().toLocaleString()
-    });
+  const handleSubmitClaim = async (form) => {
+    if (!userId) {
+      alert("Please log in to submit a claim.");
+      return;
+    }
+    try {
+      const numericAmount = parseFloat(form.amount.replace(/,/g, '')) || 0;
 
-    saveUserData(data);
-    setClaims(data.claims);
-    setModal(false);
+      const res = await fetch(`${API_BASE_URL}/api/claims`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: userId,
+          policyName: form.policy,
+          claimType: form.type,
+          amount: numericAmount,
+          description: form.description
+        })
+      });
 
-    alert("✅ Claim submitted successfully");
+      if (res.ok) {
+        alert("✅ Claim submitted successfully");
+        setModal(false);
+        window.location.reload();
+      } else {
+        alert("Failed to submit claim.");
+      }
+    } catch (e) {
+      console.error("Failed to sync claim to backend", e);
+      alert("Error submitting claim.");
+    }
   };
 
   return (
@@ -366,7 +376,15 @@ const MyClaims = () => {
         </div>
       </div>
 
-      {claims.length === 0 ? (
+      {!userId ? (
+        <div className="chart-card">
+          <div className="empty-state">
+            <div className="empty-state-icon">🔒</div>
+            <h3>Login Required</h3>
+            <p>Please log in to view or file claims.</p>
+          </div>
+        </div>
+      ) : claims.length === 0 ? (
         <div className="chart-card">
           <div className="empty-state">
             <div className="empty-state-icon">📋</div>
